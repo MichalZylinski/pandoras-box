@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Simple Map</title>
+    <meta name="viewport" content="initial-scale=1.0">
+    <meta charset="utf-8">
+    <style>
+      /* Always set the map height explicitly to define the size of the div
+       * element that contains the map. */
+      #map {
+        height: 800px;
+        top:auto;
+        width:2150px;
+        top:20px;
+      }
+      /* Optional: Makes the sample page fill the window. */
+      html, body {
+        height: 90%;
+        margin: 0;
+        width: 90%;
+        padding: 0;
+      }
+      #floating-panel {
+        position: absolute;
+        top: 100px;
+        left: 35%;
+        z-index: 5;
+        background-color: #fff;
+        padding: 5px;
+        border: 1px solid #999;
+        text-align: center;
+        font-family: 'Roboto','sans-serif';
+        line-height: 30px;
+        font-size: 24px;
+        padding-left: 10px;
+      }
+      #config-floating-panel {
+        position: absolute;
+        text-align: center;
+        left: 50%;
+        top: 10px;
+        z-index: 6;
+        background-color: #fff;
+        width:400px;
+        padding: 10px;
+        border: 1px solid #999;
+        text-align: left;
+        font-family: 'Roboto','sans-serif';
+        font-size: 24px;
+        line-height: 30px;
+        padding-left: 10px;
+      }
+      #instance-name
+      {
+        width: 200px;
+        font-size: 16px;
+      }
+      #staleness
+      {
+        width: 200px;
+        font-size: 16px;
+      }
+      #labels
+      {
+
+        text-align: left;
+        font-family: 'Roboto','sans-serif';
+        font-size: 16px;
+
+      }
+      #button
+      {
+
+
+        font-family: 'Roboto','sans-serif';
+        font-size: 16px;
+
+      }
+      #logo-spanner
+      {
+        height:60px;
+      }
+      #infowindow
+      {
+
+        text-align: left;
+        font-family: 'Roboto','sans-serif';
+        font-size: 16px;
+
+      }
+
+      #workload-button
+      {
+        font-family: 'Roboto','sans-serif';
+        font-size: 16px;
+      }
+      #top-row
+      {
+        padding: 10px;
+        top:20px;
+        height: 60px;
+        text-align: left;
+        font-family: 'Roboto','sans-serif';
+        font-size: 32px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="top-row"><img id="logo-spanner" src="https://www.gcppodcast.com/images/post/spanner.png">
+    Spanner-hammer <img id="logo-spanner" src="/static/hammer-xxl.png" ></div>
+    <!--<div id="floating-panel">
+      <input onclick="refreshData();" type=button value="Refresh data" id="button">
+      <input onclick="showMarkers();" type=button value="Show All Markers" id="button">
+      <input onclick="deleteMarkers();" type=button value="Delete Markers" id="button">
+    </div>-->
+    <div id="map"></div>
+    <script>
+      var map;
+      var markers=[];
+      var spots=[];
+      var wind;
+      function initMap() {
+        map = new google.maps.Map(document.getElementById('map'), {
+          center: {lat: 38.9807326, lng: -107.793523},
+
+          zoom: 3
+        });
+
+      }
+
+      function getJSON(url) {
+              var resp ;
+              var xmlHttp ;
+
+              resp  = '' ;
+              xmlHttp = new XMLHttpRequest();
+
+              if(xmlHttp != null)
+              {
+                  xmlHttp.open( "GET", url, false );
+                  xmlHttp.send( null );
+                  resp = xmlHttp.responseText;
+              }
+
+              return resp ;
+          }
+          function getCoordinatesforZone(zone)
+          {
+            var dict ={
+              "kuba-macbook":{lat:52.2408763, lng:21.0228658},
+              "us-central1-a":{lat:52.2418763, lng:21.0238658},
+              "europe-west1-b":{lat:50.4956706, lng:3.3424541},
+              "europe-west1-c":{lat:50.4956706, lng:3.3424541},
+              "europe-west1-d":{lat:50.4956706, lng:3.3424541},
+              "europe-west4-b":{lat:53.4258801, lng:6.8619181},
+              "europe-west4-c":{lat:53.4258801, lng:6.8619181},
+              "europe-west4-a":{lat:53.4258801, lng:6.8619181},
+              "europe-west2-b":{lat:51.5160862, lng:-0.1294581},
+              "europe-west2-c":{lat:51.5160862, lng:-0.1294581},
+              "europe-west2-d":{lat:51.5160862, lng:-0.1294581},
+              "europe-north1-a":{lat:60.5384948, lng:27.118757},
+              "europe-north1-b":{lat:60.5384948, lng:27.118757},
+              "europe-north1-c":{lat:60.5384948, lng:27.118757},
+              "us-central1-a":{lat:35.8713587, lng:-94.2209598},
+              "us-central1-b":{lat:35.8713587, lng:-94.2209598},
+              "us-central1-c":{lat:35.8713587, lng:-94.2209598},
+              "us-central1-d":{lat:35.8713587, lng:-94.2209598},
+              "us-east1-a":{lat:34.0865047, lng:-88.3203722},
+              "us-east1-b":{lat:34.0865047, lng:-88.3203722},
+              "us-east1-c":{lat:34.0865047, lng:-88.3203722},
+              "us-east1-d":{lat:34.0865047, lng:-88.3203722},
+              "us-west1-a":{lat:39.2716141, lng:-118.3501589},
+              "us-west1-b":{lat:39.2716141, lng:-118.3501589},
+              "us-west1-c":{lat:39.2716141, lng:-118.3501589},
+              "us-west1-d":{lat:39.2716141, lng:-118.3501589},
+              "us-west2-a":{lat:33.9954898, lng:-118.478853},
+              "us-west2-b":{lat:33.9954898, lng:-118.478853},
+              "us-west2-c":{lat:33.9954898, lng:-118.478853},
+              "us-west2-d":{lat:33.9954898, lng:-118.478853},
+              "asia-east1-a":{lat:24.1399009, lng:120.4279348},
+              "asia-east1-b":{lat:24.1399009, lng:120.4279348},
+              "asia-east1-c":{lat:24.1399009, lng:120.4279348},
+              "asia-east2-a":{lat:22.2780878, lng:114.1798041},
+              "asia-east2-b":{lat:22.2780878, lng:114.1798041},
+              "asia-east2-c":{lat:22.2780878, lng:114.1798041},
+              "asia-northeast1-a":{lat:35.6604153, lng:139.7270817},
+              "asia-northeast1-b":{lat:35.6604153, lng:139.7270817},
+              "asia-northeast1-c":{lat:35.6604153, lng:139.7270817},
+              "asia-southeast1-a":{lat:1.3513812, lng:103.7084569},
+              "asia-southeast1-b":{lat:1.3513812, lng:103.7084569},
+              "asia-southeast1-c":{lat:1.3513812, lng:103.7084569},
+            };
+            return dict[zone];
+          }
+
+          function refreshData()
+          {
+              var instanceid = document.getElementById("instance-id").value;        
+              var gjson= getJSON('/metrics/'+instanceid);
+
+              var doc= JSON.parse(gjson);
+
+              spots.forEach(function(item){
+                item.mapId.setMap(null);
+              });
+
+
+              doc.forEach(function(element)
+              {
+                element.mapId=new google.maps.Circle({
+                  strokeColor: element.latency <0.05 ? 'black':'black',
+                  strokeOpacity: 0.3,
+                  strokeWeight: 2,
+                  fillColor: element.latency <0.05 ? 'green':'red',
+                  fillOpacity: 0.35,
+                  map: map,
+                  center: getCoordinatesforZone(element.zone),
+                  radius: Math.pow((element.latency*100000) ,1)* 10,
+                  title: 'Uluru (Ayers Rock)',
+                  clickable:true
+                  });
+                element.infowindow = new google.maps.InfoWindow({
+                  content: '<div id="infowindow">'+ element.zone + ' </br>'+Math.round(element.latency*1000)+'ms</div>',
+
+                });
+                google.maps.event.addListener(element.mapId,'mouseover',function(){
+                  element.infowindow.setPosition(element.mapId.getCenter());
+                  element.infowindow.open(map);
+
+                });
+                google.maps.event.addListener(element.mapId,'mouseout',function(){
+                  element.infowindow.open(null);
+                });
+
+                element.mapId.setMap(map);
+                spots.push(element);
+              })
+            };
+
+
+      function deleteMarkers() {
+        spots.forEach(function(item){
+          item.mapId.setMap(null);
+        });
+      }
+
+      function showMarkers(instanceid) {
+        markers.forEach(function(item){
+          item.setMap(null);
+        });
+        markers=[]
+        if (instanceid.includes("singapore")){
+          myLatLng={lat:1.3513812, lng:103.7084569};
+          markers.push(new google.maps.Marker({position:myLatLng}));
+        };
+        if (instanceid.includes("us")){
+          myLatLng={lat:41.2208967, lng:-95.8660046};//IOWA 41.2208967,-95.8660046
+          markers.push(new google.maps.Marker({position:myLatLng}));
+        };
+
+        if (instanceid.includes("belgium")) {
+          myLatLng={lat:50.867994, lng:4.352534}; //BELGIUM
+          markers.push(new google.maps.Marker({position:myLatLng}));          
+        }
+        if (instanceid.includes("global")){
+          myLatLng={lat:41.2208967, lng:-95.8660046};//IOWA 41.2208967,-95.8660046
+          markers.push(new google.maps.Marker({position:myLatLng}));
+          myLatLng={lat:36.2929049, lng:-95.3360967};//OKLAHOMA 36.2929049,-95.3360967
+          markers.push(new google.maps.Marker({position:myLatLng}));
+          myLatLng={lat:50.4956706, lng:3.3424541};//BELGIUM {lat:50.4956706, lng:3.3424541}
+          markers.push(new google.maps.Marker({position:myLatLng}));
+          myLatLng={lat:24.1399009, lng:120.4279348};//TAIWAN{lat:24.1399009, lng:120.4279348}
+          markers.push(new google.maps.Marker({position:myLatLng}));
+        };
+        if (instanceid.includes("europe")){
+          myLatLng={lat:50.4956706, lng:3.3424541};//BELGIUM {lat:50.4956706, lng:3.3424541}
+          markers.push(new google.maps.Marker({position:myLatLng}));
+          myLatLng={lat:53.4258801, lng:6.8619181};// NETHERLANDS {lat:53.4258801, lng:6.8619181},
+          markers.push(new google.maps.Marker({position:myLatLng}));
+        };
+
+        if (instanceid.includes("nam6")){
+          myLatLng={lat:41.2208967, lng:-95.8660046};//IOWA 41.2208967,-95.8660046
+          markers.push(new google.maps.Marker({position:myLatLng}));
+          myLatLng={lat:33.0723771, lng:-80.041090};//SOUTH CAROLINA 33.0723771,-80.041090
+          markers.push(new google.maps.Marker({position:myLatLng}));
+          myLatLng={lat:45.6319052, lng:-121.2032222};//OREGON 45.6319052,-121.2032222
+          markers.push(new google.maps.Marker({position:myLatLng}));
+          myLatLng={lat:33.9954898, lng:-118.478853};//LOS ANGELES{lat:33.9954898, lng:-118.478853}
+          markers.push(new google.maps.Marker({position:myLatLng}));
+
+        };
+        markers.forEach(function(item)
+        {
+          item.setMap(map);
+        });
+      }
+
+      function UpdateInstance() {
+        var instanceid = document.getElementById("instance-id").value;
+        var gjson= getJSON('/updateInstance/'+instanceid);
+        var doc= JSON.parse(gjson);
+        showMarkers(instanceid)
+      }
+      ;
+
+      function downloadUrl(url, callback) {
+              var request = window.ActiveXObject ?
+                  new ActiveXObject('Microsoft.XMLHTTP') :
+                  new XMLHttpRequest;
+
+              request.onreadystatechange = function() {
+                if (request.readyState == 4) {
+                  request.onreadystatechange = doNothing;
+                  callback(request, request.status);
+                }
+              };
+
+              request.open('GET', url, true);
+              request.send(null);
+            }
+
+            function doNothing() {}
+    </script>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyB_xXrb576yYx44E2udoqU9PMwxMANYAIQ&callback=initMap"
+    async defer></script>
+
+    <div id="config-floating-panel">
+      <div id="labels">Spanner instance &nbsp;&nbsp; 
+        <select id="instance-id" onchange="showMarkers(this.value)">
+        {% for location in instances %}
+          <option value="{{location}}">{{location}}</option>
+        {% endfor %}
+      </select>
+      </div>
+      <input id="workload-button" onclick="UpdateInstance();" type=button value="Update" >
+      <input onclick="refreshData();" type=button value="Show latency" id="button">
+    </div>
+
+  </body>
+</html>

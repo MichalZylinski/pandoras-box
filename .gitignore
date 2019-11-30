@@ -1,0 +1,3 @@
+*.pyc
+*.tfstate
+*.DS_Store
